@@ -1,4 +1,5 @@
 import { Tag } from "antd";
+import { getOrderStatusMeta } from "@/lib/order-status";
 import type {
   KafkaDlqRecord,
   OutboxVisibilityRow,
@@ -104,9 +105,9 @@ export function formatDurationMs(value?: number) {
 }
 
 export function formatMoney(value: number) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("vi-VN", {
     style: "currency",
-    currency: "USD",
+    currency: "VND",
     maximumFractionDigits: 0,
   }).format(value || 0);
 }
@@ -132,50 +133,52 @@ function tokenIncludes(candidate: string | number | undefined, focusToken: strin
 }
 
 export function healthTag(status: string) {
-  if (status === "UP") return <Tag color="green">UP</Tag>;
-  if (status === "DOWN") return <Tag color="red">DOWN</Tag>;
-  if (status === "UNAVAILABLE") return <Tag>UNAVAILABLE</Tag>;
-  return <Tag color="blue">{status || "UNKNOWN"}</Tag>;
+  if (status === "UP") return <Tag color="green">Hoạt động</Tag>;
+  if (status === "DOWN") return <Tag color="red">Có lỗi</Tag>;
+  if (status === "UNAVAILABLE") return <Tag>Không truy cập</Tag>;
+  return <Tag color="blue">{status || "Không rõ"}</Tag>;
 }
 
 export function orderTag(status: string) {
-  if (status === "COMPLETED") return <Tag color="green">COMPLETED</Tag>;
-  if (status === "FAILED" || status === "PAYMENT_FAILED") return <Tag color="red">{status}</Tag>;
-  if (status === "VALIDATED") return <Tag color="blue">VALIDATED</Tag>;
-  if (status === "PENDING") return <Tag color="gold">PENDING</Tag>;
-  return <Tag>{status || "UNKNOWN"}</Tag>;
+  const meta = getOrderStatusMeta(status || "PENDING");
+  return <Tag color={meta.color}>{meta.label}</Tag>;
 }
 
 export function outboxTag(status: string) {
-  if (status === "SENT") return <Tag color="green">SENT</Tag>;
-  if (status === "FAILED") return <Tag color="red">FAILED</Tag>;
-  if (status === "RETRY") return <Tag color="gold">RETRY</Tag>;
-  if (status === "NEW") return <Tag color="blue">NEW</Tag>;
-  return <Tag>{status || "UNKNOWN"}</Tag>;
+  if (status === "SENT") return <Tag color="green">Đã gửi</Tag>;
+  if (status === "FAILED") return <Tag color="red">Lỗi</Tag>;
+  if (status === "RETRY") return <Tag color="gold">Đang thử lại</Tag>;
+  if (status === "NEW") return <Tag color="blue">Mới tạo</Tag>;
+  return <Tag>{status || "Không rõ"}</Tag>;
 }
 
 export function sagaTag(status: string) {
-  if (status === "COMPLETED") return <Tag color="green">COMPLETED</Tag>;
-  if (status === "COMPENSATED") return <Tag color="blue">COMPENSATED</Tag>;
+  if (status === "COMPLETED") return <Tag color="green">Hoàn tất</Tag>;
+  if (status === "COMPENSATED") return <Tag color="blue">Đã bù trừ</Tag>;
   if (status === "WAITING" || status === "RUNNING" || status === "COMPENSATING") {
-    return <Tag color="gold">{status}</Tag>;
+    if (status === "COMPENSATING") {
+      return <Tag color="gold">Đang bù trừ</Tag>;
+    }
+    return <Tag color="gold">Đang chạy</Tag>;
   }
   if (
     status === "FAILED" ||
     status === "TIMED_OUT" ||
     status === "COMPENSATION_FAILED"
   ) {
-    return <Tag color="red">{status}</Tag>;
+    if (status === "TIMED_OUT") {
+      return <Tag color="red">Quá hạn</Tag>;
+    }
+    if (status === "COMPENSATION_FAILED") {
+      return <Tag color="red">Bù trừ lỗi</Tag>;
+    }
+    return <Tag color="red">Thất bại</Tag>;
   }
-  return <Tag>{status || "UNKNOWN"}</Tag>;
+  return <Tag>{status || "Không rõ"}</Tag>;
 }
 
 export function outboxMatchesOrder(row: OutboxVisibilityRow, orderToken: string) {
-  return (
-    tokenIncludes(row.msgKey, orderToken) ||
-    tokenIncludes(row.eventId, orderToken) ||
-    tokenIncludes(row.lastError, orderToken)
-  );
+  return tokenIncludes(row.correlationId, orderToken) || tokenIncludes(row.msgKey, orderToken);
 }
 
 export function sagaMatchesOrder(row: SagaInstanceView, orderToken: string) {

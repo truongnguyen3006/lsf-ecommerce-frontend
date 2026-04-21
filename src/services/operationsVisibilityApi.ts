@@ -24,6 +24,8 @@ export interface OutboxVisibilityRow {
   msgKey?: string;
   eventId: string;
   eventType: string;
+  correlationId?: string;
+  aggregateId?: string;
   status: string;
   retryCount: number;
   createdAt?: string;
@@ -241,6 +243,8 @@ function normalizeOutboxRow(payload: unknown): OutboxVisibilityRow {
     msgKey: readString(payload.msgKey || payload.key),
     eventId: readString(payload.eventId),
     eventType: readString(payload.eventType),
+    correlationId: readString(payload.correlationId),
+    aggregateId: readString(payload.aggregateId),
     status: readString(payload.status, "UNKNOWN").toUpperCase(),
     retryCount: readNumber(payload.retryCount),
     createdAt: readString(payload.createdAt),
@@ -625,6 +629,7 @@ export const operationsVisibilityApi = {
     msgKey?: string;
     topic?: string;
     eventType?: string;
+    correlationId?: string;
   }): Promise<OutboxVisibilityRow[]> {
     const payload = await axiosClient.get<unknown, unknown>("/api/system/outbox", {
       params,

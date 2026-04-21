@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { AutoComplete, Button, Select, Typography } from "antd";
 import { ReloadOutlined } from "@ant-design/icons";
 import type { FrameworkSectionConfig, FrameworkSectionKey } from "./frameworkDemoConfig";
@@ -9,12 +10,17 @@ const { Title } = Typography;
 interface DemoConsoleHeaderProps {
   activeSection: FrameworkSectionKey;
   sections: FrameworkSectionConfig[];
+  orderFilter: string;
+  orderFilterOptions: Array<{ value: string; label: string }>;
+  orderFilterHint?: string;
   trackedOrderNumber: string;
-  orderOptions: Array<{ value: string; label: string }>;
+  hasTrackedOrder: boolean;
+  orderOptions: Array<{ value: string; label: ReactNode }>;
   trackedSku: string;
   skuOptions: Array<{ value: string; label: string }>;
   lockTrackedSku: boolean;
   onSectionChange: (key: FrameworkSectionKey) => void;
+  onOrderFilterChange: (value: string) => void;
   onTrackedOrderChange: (value?: string) => void;
   onTrackedSkuChange: (value?: string) => void;
   onRefreshAll: () => void;
@@ -23,12 +29,17 @@ interface DemoConsoleHeaderProps {
 export default function DemoConsoleHeader({
   activeSection,
   sections,
+  orderFilter,
+  orderFilterOptions,
+  orderFilterHint,
   trackedOrderNumber,
+  hasTrackedOrder,
   orderOptions,
   trackedSku,
   skuOptions,
   lockTrackedSku,
   onSectionChange,
+  onOrderFilterChange,
   onTrackedOrderChange,
   onTrackedSkuChange,
   onRefreshAll,
@@ -39,27 +50,45 @@ export default function DemoConsoleHeader({
         <div className="grid gap-4 xl:grid-cols-[0.72fr_1.48fr] xl:items-start">
           <div className="max-w-xl">
             <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">
-              Framework Console
+              Minh chứng framework
             </div>
             <Title level={3} className="!mb-2 !mt-2 !text-[var(--color-primary)]">
-              Bảng điều khiển framework
+              Bảng theo dõi hệ thống
             </Title>
           </div>
 
-          <div className="grid gap-3 rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-4 lg:grid-cols-[1.75fr_1.15fr_auto] lg:items-end">
+          <div className="grid gap-3 rounded-[24px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-4 lg:grid-cols-[0.92fr_1.72fr_1.16fr_auto] lg:items-end">
             <div>
               <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
-                Order đang theo dõi
+                Lọc đơn
+              </div>
+              <Select
+                value={orderFilter}
+                options={orderFilterOptions}
+                onChange={onOrderFilterChange}
+                className="framework-demo-compact-select w-full"
+                popupClassName="framework-demo-select-popup"
+                popupMatchSelectWidth={320}
+              />
+              {orderFilterHint ? (
+                <div className="mt-2 text-xs text-[var(--color-secondary)]">{orderFilterHint}</div>
+              ) : null}
+            </div>
+
+            <div>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-muted)]">
+                Đơn đang theo dõi
               </div>
               <AutoComplete
                 value={trackedOrderNumber}
                 options={orderOptions}
                 onChange={onTrackedOrderChange}
                 onSelect={onTrackedOrderChange}
-                placeholder="Nhập hoặc chọn orderNumber"
+                placeholder="Nhập hoặc chọn mã đơn"
                 allowClear
                 popupMatchSelectWidth={640}
-                className="w-full"
+                className="framework-demo-compact-select w-full"
+                popupClassName="framework-demo-select-popup"
                 filterOption={(inputValue, option) =>
                   String(option?.value || "")
                     .toUpperCase()
@@ -78,11 +107,13 @@ export default function DemoConsoleHeader({
                   options={skuOptions}
                   onChange={onTrackedSkuChange}
                   onClear={() => onTrackedSkuChange(undefined)}
-                  placeholder="Chọn SKU trong đơn"
+                  placeholder={hasTrackedOrder ? "Chọn SKU trong đơn" : "Chọn đơn hàng trước"}
                   allowClear
                   showSearch
+                  disabled={!hasTrackedOrder}
                   popupMatchSelectWidth={420}
-                  className="w-full"
+                  className="framework-demo-compact-select w-full"
+                  popupClassName="framework-demo-select-popup"
                   filterOption={(inputValue, option) =>
                     String(option?.value || "")
                       .toUpperCase()
@@ -98,10 +129,12 @@ export default function DemoConsoleHeader({
                   options={skuOptions}
                   onChange={onTrackedSkuChange}
                   onSelect={onTrackedSkuChange}
-                  placeholder="Nhập hoặc chọn SKU"
+                  placeholder={hasTrackedOrder ? "Nhập hoặc chọn SKU" : "Chọn đơn hàng trước"}
                   allowClear
+                  disabled={!hasTrackedOrder}
                   popupMatchSelectWidth={420}
-                  className="w-full"
+                  className="framework-demo-compact-select w-full"
+                  popupClassName="framework-demo-select-popup"
                   filterOption={(inputValue, option) =>
                     String(option?.value || "")
                       .toUpperCase()

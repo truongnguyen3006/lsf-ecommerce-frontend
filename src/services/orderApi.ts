@@ -1,11 +1,14 @@
 import axiosClient from '@/lib/axiosClient';
 import { isRecord, readNumber, readString, unwrapCollection } from '@/lib/api-normalizers';
 
+export type PaymentMethod = 'MOCK_SUCCESS' | 'MOCK_FAIL' | 'MOCK_TIMEOUT' | 'COD';
+
 export interface OrderRequest {
   items: {
     skuCode: string;
     quantity: number;
   }[];
+  paymentMethod: PaymentMethod;
 }
 
 export interface OrderPlacementResponse {
@@ -30,6 +33,7 @@ export interface OrderResponse {
   totalPrice: number;
   orderDate: string;
   orderLineItemsList: OrderLineItem[];
+  paymentMethod?: PaymentMethod;
   userId?: string;
   customerName?: string;
   customerEmail?: string;
@@ -85,6 +89,7 @@ function normalizeOrder(payload: unknown): OrderResponse {
     totalPrice: readNumber(payload.totalPrice ?? payload.totalAmount ?? payload.amount),
     orderDate: readString(payload.orderDate || payload.createdAt || payload.createdDate),
     orderLineItemsList: rawItems.map(normalizeOrderLineItem),
+    paymentMethod: readString(payload.paymentMethod, 'MOCK_SUCCESS') as PaymentMethod,
     userId: readString(payload.userId || payload.accountId),
     customerName: readString(payload.customerName || payload.fullName || payload.username),
     customerEmail: readString(payload.customerEmail || payload.email),
