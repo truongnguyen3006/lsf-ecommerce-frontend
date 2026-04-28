@@ -10,15 +10,8 @@ Repository này là frontend của hệ thống backend consumer nằm ở `<wor
 |---|---|
 | Hiểu frontend dùng để làm gì | [Dành cho ai?](#dành-cho-ai), [Chức năng chính](#chức-năng-chính), [Trang chính](#trang-chính) |
 | Chạy source local | [Yêu cầu môi trường](#yêu-cầu-môi-trường), [Cài đặt và chạy local](#cài-đặt-và-chạy-local), [Scripts](#scripts) |
-| Demo bảo vệ luận văn | [Luồng demo frontend đề xuất](#luồng-demo-frontend-đề-xuất), [Hình ảnh minh họa](#hình-ảnh-minh-họa), [Kiểm tra trước khi demo](#kiểm-tra-trước-khi-demo) |
+| Demo | [Luồng demo frontend đề xuất](#luồng-demo-frontend-đề-xuất), [Hình ảnh minh họa](#hình-ảnh-minh-họa), [Kiểm tra trước khi demo](#kiểm-tra-trước-khi-demo) |
 | Phát triển hoặc debug | [Cấu trúc thư mục](#cấu-trúc-thư-mục), [Cách frontend gọi backend](#cách-frontend-gọi-backend), [Lỗi phổ biến khi chạy và cách sửa](#lỗi-phổ-biến-khi-chạy-và-cách-sửa) |
-
-## Dành cho ai?
-
-- Người dùng demo flow mua hàng từ xem sản phẩm đến checkout.
-- Admin cần quản lý sản phẩm, đơn hàng, người dùng và quan sát bằng chứng vận hành.
-- Người trình bày demo cần một giao diện để đối chiếu checkout flow với bằng chứng vận hành của LSF.
-- Developer frontend cần biết cách kết nối với backend microservices qua gateway/Nginx.
 
 ## Công nghệ sử dụng
 
