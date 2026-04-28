@@ -1,99 +1,137 @@
 # Ecommerce Frontend
 
-Frontend này là giao diện demo cho consumer project ecommerce khi tích hợp với **LSF**. Mục tiêu chính không phải xây một website thương mại điện tử đầy đủ tính năng, mà là giúp trình bày rõ luồng `order -> inventory -> payment -> notification` và mở các bề mặt quan sát framework trong lúc demo.
+> Giao diện Next.js cho hệ ecommerce consumer dùng LSF, phục vụ demo checkout, realtime order status và màn hình admin evidence.
 
-## Vai trò của repo này trong bài toán luận văn
+Repository này là frontend của hệ thống backend consumer nằm ở `<workspace>/ecommerce-backend`. Giao diện không chỉ tạo đơn hàng như một storefront thông thường, mà còn giúp trình bày bằng chứng LSF: availability sau reservation, outbox events, Kafka DLQ, saga snapshot và các link quan sát hệ thống.
 
-- cung cấp storefront đủ dùng để tạo đơn hàng thật
-- hiển thị trạng thái đơn hàng theo thời gian thực qua WebSocket
-- cung cấp khu vực admin để quan sát availability, outbox recent và các quick links vận hành
-- làm bề mặt trình diễn cho việc `order-service` hiện mặc định chạy `LSF_SAGA` ở môi trường demo
+## Đọc nhanh
+
+| Mục tiêu đọc | Nên đọc |
+|---|---|
+| Hiểu frontend dùng để làm gì | [Dành cho ai?](#dành-cho-ai), [Chức năng chính](#chức-năng-chính), [Trang chính](#trang-chính) |
+| Chạy source local | [Yêu cầu môi trường](#yêu-cầu-môi-trường), [Cài đặt và chạy local](#cài-đặt-và-chạy-local), [Scripts](#scripts) |
+| Demo bảo vệ luận văn | [Luồng demo frontend đề xuất](#luồng-demo-frontend-đề-xuất), [Hình ảnh minh họa](#hình-ảnh-minh-họa), [Kiểm tra trước khi demo](#kiểm-tra-trước-khi-demo) |
+| Phát triển hoặc debug | [Cấu trúc thư mục](#cấu-trúc-thư-mục), [Cách frontend gọi backend](#cách-frontend-gọi-backend), [Lỗi phổ biến khi chạy và cách sửa](#lỗi-phổ-biến-khi-chạy-và-cách-sửa) |
+
+## Dành cho ai?
+
+- Người dùng demo flow mua hàng từ xem sản phẩm đến checkout.
+- Admin cần quản lý sản phẩm, đơn hàng, người dùng và quan sát evidence.
+- Người trình bày demo cần một giao diện để đối chiếu checkout flow với evidence của LSF.
+- Developer frontend cần biết cách kết nối với backend microservices qua gateway/Nginx.
+
+## Công nghệ sử dụng
+
+| Nhóm | Công nghệ |
+|---|---|
+| Framework | Next.js 16, React 19 |
+| Ngôn ngữ | TypeScript |
+| UI | Ant Design 5, Tailwind CSS 4 |
+| Data fetching | Axios, TanStack Query |
+| State | Zustand |
+| Realtime | SockJS, STOMP |
+| Tooling | ESLint, npm |
 
 ## Chức năng chính
 
 ### Khách hàng
 
-- Xem danh sách sản phẩm và lọc theo từ khóa, danh mục
-- Xem chi tiết sản phẩm, chọn màu, size và kiểm tra tồn kho theo biến thể
-- Đăng ký, đăng nhập tài khoản
-- Thêm sản phẩm vào giỏ hàng, chỉnh số lượng và đặt hàng
-- Theo dõi trạng thái đơn hàng qua trang đơn hàng và màn hình chờ xử lý
-- Nhận cập nhật trạng thái đơn hàng theo thời gian thực qua WebSocket
-- Xem và cập nhật hồ sơ cá nhân
+- Xem danh sách sản phẩm.
+- Xem chi tiết sản phẩm, chọn màu/size/SKU.
+- Đăng ký, đăng nhập và refresh token.
+- Thêm/xóa sản phẩm trong giỏ hàng.
+- Checkout và theo dõi trạng thái đơn hàng.
+- Nhận cập nhật realtime qua WebSocket.
+- Xem lịch sử đơn hàng và hồ sơ cá nhân.
 
 ### Admin
 
-- Xem danh sách sản phẩm, đơn hàng và người dùng
-- Tạo sản phẩm mới và quản lý biến thể
-- Khóa hoặc mở khóa tài khoản người dùng
-- Mở màn **Framework Evidence** để phục vụ demo LSF
+- Quản lý sản phẩm và biến thể.
+- Xem danh sách đơn hàng.
+- Xem và khóa/mở khóa người dùng.
+- Mở màn `Framework Evidence` để đối chiếu LSF runtime:
+  - inventory availability
+  - order/saga timeline
+  - recent outbox rows
+  - Kafka DLQ topics/records
+  - quick links tới Grafana, Prometheus, Zipkin, phpMyAdmin
 
-## Framework Evidence
-
-Khu vực admin có thêm một màn riêng để phục vụ demo framework:
-
-- tra cứu availability theo SKU
-- xem recent outbox events
-- lọc nhanh theo `orderNumber` hoặc `msgKey`
-- mở nhanh Grafana, Zipkin, phpMyAdmin, outbox admin, Kafka admin và saga evidence qua backend
-
-Phần này giúp frontend không chỉ là nơi tạo đơn, mà còn là nơi đối chiếu bằng chứng tích hợp framework.
-
-## Cấu trúc chính
+## Cấu trúc thư mục
 
 ```text
-src/
-├─ app/                # các trang chính
-├─ components/         # component giao diện
-├─ services/           # gọi API
-├─ lib/                # axios, helper, auth, order status
-├─ store/              # state management
-├─ constants/          # quick links hệ thống
-└─ types/              # kiểu dữ liệu
+ecommerce-frontend/
+├─ public/
+├─ screenshots/
+├─ src/
+│  ├─ app/                 # App Router pages
+│  ├─ components/          # UI components
+│  ├─ components/admin/    # Admin và framework evidence panels
+│  ├─ constants/           # System links
+│  ├─ lib/                 # axios client, auth helpers, normalizers
+│  ├─ services/            # API clients
+│  ├─ store/               # Zustand stores
+│  └─ types/               # Shared TypeScript types
+├─ .env.example
+├─ next.config.ts
+├─ package.json
+└─ tsconfig.json
 ```
 
 ## Yêu cầu môi trường
 
 - Node.js 20+
 - npm 10+
-- Backend API sẵn sàng qua `http://localhost:8000`
-- WebSocket server tại `http://localhost:8087/ws`
+- Backend đang chạy ở `<workspace>/ecommerce-backend`
+- API entrypoint qua Nginx/Gateway tại `http://localhost:8000`
+- WebSocket notification tại `http://localhost:8087/ws`
 
-## Cách chạy local
+## Cài đặt và chạy local
 
-### 1. Bảo đảm backend đã chạy trước
+### 1. Chạy backend trước
 
-Repo frontend phụ thuộc trực tiếp vào:
+Khuyến nghị thứ tự:
 
-- repo framework: `D:\IdeaProjects\lsf-parent-fixed`
-- repo backend consumer: `D:\IdeaProjects\ecommerce-backend`
+```bash
+cd <workspace>/lsf-parent
+mvn clean install
 
-Trước khi chạy frontend, nên:
+cd <workspace>/ecommerce-backend
+docker compose up -d
+```
 
-1. `mvn clean install` ở repo framework
-2. `docker compose up -d` ở backend
-3. khởi động backend service theo đúng startup order
+Sau đó chạy các Spring Boot services theo README backend.
 
 ### 2. Cài dependencies
 
 ```bash
+cd <workspace>/ecommerce-frontend
 npm install
 ```
 
 ### 3. Tạo file môi trường
 
-Tạo file `.env.local`:
+```bash
+copy .env.example .env.local
+```
+
+Nội dung mặc định:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_GATEWAY_URL=http://localhost:8000
+NEXT_PUBLIC_PRODUCT_SERVICE_URL=http://localhost:8083
+NEXT_PUBLIC_CART_SERVICE_URL=http://localhost:8084
+NEXT_PUBLIC_ORDER_SERVICE_URL=http://localhost:8086
+NEXT_PUBLIC_INVENTORY_SERVICE_URL=http://localhost:8082
 NEXT_PUBLIC_WS_URL=http://localhost:8087/ws
 NEXT_PUBLIC_GRAFANA_URL=http://localhost:3000
 NEXT_PUBLIC_ZIPKIN_URL=http://localhost:9411
+NEXT_PUBLIC_PROMETHEUS_URL=http://localhost:9090
 NEXT_PUBLIC_PHPMYADMIN_URL=http://localhost:8888
-NEXT_PUBLIC_OUTBOX_ADMIN_URL=http://localhost:8000/admin/outbox
+NEXT_PUBLIC_GATEWAY_HEALTH_URL=http://localhost:8000/actuator/health
 ```
 
-### 4. Chạy frontend
+### 4. Chạy dev server
 
 ```bash
 npm run dev
@@ -101,81 +139,169 @@ npm run dev
 
 Frontend mặc định chạy tại:
 
-- `http://localhost:3001`
+```text
+http://localhost:3001
+```
 
-## Startup order phía backend nên đi kèm khi demo
+## Scripts
 
-1. `discovery-server`
-2. `api-gateway`
-3. `user-service`
-4. `product-service`
-5. `inventory-service`
-6. `order-service`
-7. `payment-service`
-8. `cart-service`
-9. `notification-service`
+| Lệnh | Mục đích |
+|---|---|
+| `npm run dev` | Chạy Next dev server ở port `3001` |
+| `npm run build` | Build production |
+| `npm run start` | Chạy production build |
+| `npm run lint` | Chạy ESLint |
 
-## Tài khoản mẫu cho demo
+## Cách frontend gọi backend
 
-- Admin để mở khu vực quản trị/evidence:
-  - `username`: `admin`
-  - `password`: `admin123456@`
-- Để demo storefront và checkout mượt hơn, nên đăng ký một tài khoản user thường riêng trên giao diện.
+`axiosClient` dùng `baseURL: "/"`. Next.js sẽ rewrite request trong `next.config.ts`:
 
-## Các URL chính
+| Frontend path | Backend đích |
+|---|---|
+| `/api/:path*` | `${NEXT_PUBLIC_API_URL}/api/:path*` |
+| `/auth/:path*` | `${NEXT_PUBLIC_API_URL}/auth/:path*` |
+| `/ops/gateway/:path*` | `${NEXT_PUBLIC_GATEWAY_URL}/:path*` |
+| `/ops/product/:path*` | `${NEXT_PUBLIC_PRODUCT_SERVICE_URL}/:path*` |
+| `/ops/cart/:path*` | `${NEXT_PUBLIC_CART_SERVICE_URL}/:path*` |
+| `/ops/order/:path*` | `${NEXT_PUBLIC_ORDER_SERVICE_URL}/:path*` |
+| `/ops/inventory/:path*` | `${NEXT_PUBLIC_INVENTORY_SERVICE_URL}/:path*` |
 
-- Frontend: `http://localhost:3001`
-- Entry API qua Nginx: `http://localhost:8000`
-- WebSocket: `http://localhost:8087/ws`
-- Keycloak: `http://localhost:8085`
-- Grafana: `http://localhost:3000`
-- Prometheus: `http://localhost:9090`
-- Zipkin: `http://localhost:9411`
-- phpMyAdmin: `http://localhost:8888`
+Access token được lưu trong `sessionStorage` và tự gắn vào header:
 
-## Kịch bản demo tương ứng
+```text
+Authorization: Bearer <access_token>
+```
 
-### 1. Happy path
+Khi gặp `401`, client sẽ thử refresh token qua `/auth/refresh`.
 
-- đăng nhập user thường
-- thêm sản phẩm vào giỏ
-- checkout
-- theo dõi realtime trên màn hình chờ và trang đơn hàng
-- đăng nhập admin để đối chiếu evidence
+## Trang chính
 
-### 2. Failure / compensation
+| Route | Vai trò |
+|---|---|
+| `/` | Trang chủ/storefront |
+| `/products` | Danh sách sản phẩm |
+| `/product/[id]` | Chi tiết sản phẩm |
+| Header/cart UI | Giỏ hàng qua Zustand store |
+| `/checkout` | Checkout |
+| `/checkout/waiting/[orderNumber]` | Màn hình chờ xử lý đơn hàng realtime |
+| `/orders` | Đơn hàng của người dùng |
+| `/login`, `/register` | Auth |
+| `/profile` | Hồ sơ cá nhân |
+| `/admin` | Dashboard admin |
+| `/admin/products` | Quản lý sản phẩm |
+| `/admin/orders` | Quản lý đơn hàng |
+| `/admin/users` | Quản lý người dùng |
+| `/admin/framework` | Evidence dashboard cho LSF |
 
-- chạy luồng gây payment failure hoặc release reservation
-- dùng frontend để quan sát status đơn hàng
-- dùng màn admin framework để đối chiếu event và availability
+## Luồng demo frontend đề xuất
 
-### 3. Timeout / overdue
+1. Mở trang sản phẩm tại `/products` hoặc trang chủ storefront.
+2. Chọn một sản phẩm và SKU còn hàng tại `/product/[id]`.
+3. Thêm sản phẩm vào giỏ hàng và kiểm tra lại số lượng.
+4. Checkout để tạo đơn hàng mới.
+5. Theo dõi trạng thái tại `/checkout/waiting/[orderNumber]`, quan sát realtime update từ WebSocket.
+6. Vào `/admin/framework` để kiểm tra evidence runtime: saga, reservation, outbox, Kafka DLQ và quick links quan sát hệ thống.
 
-- sau khi chạy tải từ backend/JMeter, mở admin evidence để đối chiếu runtime cùng dashboard ngoài
+## Tài khoản demo
 
-### 4. Recovery after restart
+| Vai trò | Username | Password |
+|---|---|---|
+| Admin | `admin` | `admin123456@` |
 
-- giữ màn hình waiting hoặc orders để quan sát đơn hàng trước và sau khi `order-service` khởi động lại
+User thường có thể đăng ký trực tiếp trên giao diện.
 
-### 5. Anti-oversell / burst traffic
+> Credential demo chỉ dùng cho môi trường local/bảo vệ luận văn. Không dùng lại cho production hoặc môi trường public.
 
-- dùng frontend như bề mặt kiểm tra số lượng đơn thành công, trạng thái availability và liên kết tới dashboard
+## URL hệ thống liên quan
 
-## Tài liệu nên đọc kèm
+| Công cụ | URL |
+|---|---|
+| Frontend | `http://localhost:3001` |
+| Backend API qua Nginx | `http://localhost:8000` |
+| WebSocket | `http://localhost:8087/ws` |
+| Keycloak | `http://localhost:8085` |
+| Grafana | `http://localhost:3000` |
+| Prometheus | `http://localhost:9090` |
+| Zipkin | `http://localhost:9411` |
+| phpMyAdmin | `http://localhost:8888` |
 
-Khi trình bày demo, nên mở song song README và evidence docs của backend consumer, đặc biệt các file:
+## Hình ảnh minh họa
 
-- `docs/LSF_INTEGRATION_TRACEABILITY.md`
-- `docs/LSF_PHASE3_OPERATIONS_VISIBILITY.md`
-- `docs/LSF_PHASE8_DEFAULT_ON_SAGA_CUTOVER.md`
+Một số ảnh demo có trong thư mục `screenshots/`:
 
-## Giới hạn hiện tại
+![Products](screenshots/products.png)
 
-- Chưa phải website thương mại điện tử hoàn chỉnh theo hướng production.
-- Giao diện hiện được giữ ở mức đủ tốt để phục vụ checkout flow và phần demo framework.
-- Một số quick links evidence phụ thuộc backend và hạ tầng quan sát đang chạy.
-- Frontend chưa có automated UI test riêng; giá trị chính của repo nằm ở khả năng hỗ trợ demo và đối chiếu evidence.
-- Trọng tâm đóng góp của đề tài vẫn nằm ở framework LSF và consumer integration phía backend.
+Trang danh sách sản phẩm giúp người xem bắt đầu flow mua hàng từ storefront.
+
+![Product detail](screenshots/ProductDetail.png)
+
+Trang chi tiết sản phẩm thể hiện việc chọn màu/size/SKU và xem tồn kho khả dụng trước khi thêm vào giỏ hàng.
+
+![Cart](screenshots/Cart.png)
+
+Giỏ hàng là bước trung gian trước checkout, giúp kiểm tra lại SKU và số lượng.
+
+![Checkout](screenshots/Checkout.png)
+
+Màn checkout gửi yêu cầu tạo đơn hàng sang backend consumer và kích hoạt flow `cart -> order -> inventory -> payment -> notification`.
+
+<img src="screenshots/1%20(1).png" alt="Checkout waiting" width="1512">
+
+Màn hình chờ checkout hiển thị realtime order status, cho thấy reservation được confirm và event cuối đã được phát qua hệ thống.
+
+![My orders](screenshots/MyOrders.png)
+
+Trang đơn hàng của tôi dùng để đối chiếu kết quả sau khi checkout hoàn tất.
+
+![Admin](screenshots/Admin.png)
+
+Dashboard admin hỗ trợ kiểm tra nhanh dữ liệu quản trị như người dùng, doanh thu và số đơn phát sinh.
+
+<img src="screenshots/1%20(2).png" alt="Framework Evidence" width="1512">
+
+Màn hình Framework Evidence giúp người demo kiểm tra trạng thái runtime của LSF mà không cần đọc log thủ công, bao gồm availability, saga timeline, outbox, Kafka DLQ và các liên kết quan sát hệ thống.
+
+## Lỗi phổ biến khi chạy và cách sửa
+
+| Lỗi | Nguyên nhân thường gặp | Cách sửa |
+|---|---|---|
+| `npm install` lỗi do version Node | Node.js quá cũ so với Next.js 16/React 19 | Dùng Node.js 20+ rồi chạy lại `npm install` |
+| `npm run dev` báo port `3001` đã được dùng | Dev server cũ đang chạy | Dừng process cũ hoặc đổi script `next dev -p 3001` trong `package.json` |
+| Trang gọi API bị `404` hoặc `ECONNREFUSED` | Backend/Nginx ở `http://localhost:8000` chưa chạy hoặc `.env.local` sai | Chạy backend trước, kiểm tra `NEXT_PUBLIC_API_URL`, restart dev server |
+| Đăng nhập bị `401` liên tục | Token cũ trong `sessionStorage` hết hạn hoặc refresh token lỗi | Logout, xóa `sessionStorage`, đăng nhập lại; kiểm tra `user-service` và Keycloak |
+| Không thấy sản phẩm | `product-service` chưa chạy, MySQL chưa seed hoặc gateway route lỗi | Kiểm tra `product-service`, database `product-service`, và `http://localhost:8000/api/product` |
+| Checkout không chuyển trạng thái | `order-service`, `inventory-service`, `payment-service` hoặc Kafka chưa sẵn sàng | Kiểm tra các service trong Eureka, Kafka/Schema Registry và log của từng service |
+| Màn hình chờ không nhận realtime update | WebSocket URL sai hoặc `notification-service` chưa chạy | Kiểm tra `NEXT_PUBLIC_WS_URL=http://localhost:8087/ws`, chạy lại `notification-service` |
+| Quick links Grafana/Zipkin/Prometheus/phpMyAdmin không mở được | Container quan sát chưa chạy hoặc port bị chiếm | Chạy `docker compose up -d` trong backend và kiểm tra các port tương ứng |
+| Ảnh sản phẩm không hiển thị | URL ảnh bên ngoài bị chặn/mất mạng hoặc domain thay đổi | Kiểm tra network; `next.config.ts` hiện cho phép remote image HTTPS |
+
+## Kiểm tra trước khi demo
+
+- Backend services đã đăng ký đủ trên Eureka.
+- Gateway/Nginx hoạt động và `http://localhost:8000` route được tới gateway.
+- Keycloak realm đã import và admin user đã được seed.
+- `notification-service` chạy để WebSocket cập nhật trạng thái đơn hàng.
+- Grafana/Prometheus/Zipkin/phpMyAdmin chạy nếu muốn mở quick links evidence.
+
+## Trạng thái hoàn thành
+
+| Phần | Trạng thái |
+|---|---|
+| Storefront cơ bản | Đã có |
+| Auth/register/login/refresh | Đã có |
+| Cart/checkout/order status | Đã có |
+| WebSocket realtime | Đã có |
+| Admin product/order/user | Đã có |
+| Framework Evidence | Đã có để phục vụ demo LSF |
+| Automated UI tests | Chưa có |
+| Production ecommerce polish | Không phải mục tiêu chính |
+
+## Lưu ý quan trọng
+
+- Frontend phụ thuộc mạnh vào backend và hạ tầng local; nếu API lỗi, kiểm tra backend trước.
+- Nếu đổi port backend, cập nhật `.env.local` và restart `npm run dev`.
+- Các quick links evidence chỉ hoạt động khi service tương ứng đang chạy.
+- Đây là giao diện demo/luận văn, chưa phải website thương mại điện tử production-ready.
 
 ## Tác giả
 
