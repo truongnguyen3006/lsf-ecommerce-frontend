@@ -2,7 +2,7 @@
 
 > Giao diện Next.js cho hệ ecommerce consumer dùng LSF, phục vụ demo checkout, realtime order status và màn hình bằng chứng quản trị.
 
-Repository này là frontend của hệ thống backend consumer nằm ở `<workspace>/ecommerce-backend`. Giao diện không chỉ tạo đơn hàng như một storefront thông thường, mà còn giúp trình bày bằng chứng LSF: availability sau reservation, outbox events, Kafka DLQ, saga snapshot và các liên kết quan sát hệ thống.
+Repository này là frontend của hệ thống backend consumer [lsf-ecommerce-backend](https://github.com/truongnguyen3006/lsf-ecommerce-backend.git). Giao diện không chỉ tạo đơn hàng như một storefront thông thường, mà còn giúp trình bày bằng chứng LSF: availability sau reservation, outbox events, Kafka DLQ, saga snapshot và các liên kết quan sát hệ thống.
 
 ## Đọc nhanh
 
@@ -74,7 +74,7 @@ ecommerce-frontend/
 
 - Node.js 20+
 - npm 10+
-- Backend đang chạy ở `<workspace>/ecommerce-backend`
+- Backend [lsf-ecommerce-backend](https://github.com/truongnguyen3006/lsf-ecommerce-backend.git) đang chạy
 - API entrypoint qua Nginx/Gateway tại `http://localhost:8000`
 - WebSocket notification tại `http://localhost:8087/ws`
 
@@ -85,10 +85,12 @@ ecommerce-frontend/
 Khuyến nghị thứ tự:
 
 ```bash
-cd <workspace>/lsf-parent
+git clone https://github.com/truongnguyen3006/lsf-framework.git
+cd lsf-framework
 mvn clean install
 
-cd <workspace>/ecommerce-backend
+git clone https://github.com/truongnguyen3006/lsf-ecommerce-backend.git
+cd lsf-ecommerce-backend
 docker compose up -d
 ```
 
@@ -97,7 +99,8 @@ Sau đó chạy các Spring Boot services theo README backend.
 ### 2. Cài dependencies
 
 ```bash
-cd <workspace>/ecommerce-frontend
+git clone https://github.com/truongnguyen3006/lsf-ecommerce-frontend.git
+cd lsf-ecommerce-frontend
 npm install
 ```
 
